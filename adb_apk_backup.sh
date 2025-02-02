@@ -21,6 +21,7 @@ cat "$OUTPUT_DIR/unlisted1.txt" "$OUTPUT_DIR/unlisted2.txt" | sort -u > "$OUTPUT
 rm "$OUTPUT_DIR/unlisted1.txt" "$OUTPUT_DIR/unlisted2.txt"
 
 cd "$OUTPUT_DIR/apk"
+zip "$OUTPUT_DIR - apk.zip" "$OUTPUT_DIR/apk" 
 # Über die Datei iterieren
 while IFS= read -r package
 do
@@ -29,4 +30,3 @@ do
 done < "../packages.txt"
 cd ..
 cd ..
-
