@@ -8,6 +8,12 @@ device_model=$(adb shell getprop ro.product.model | tr -d '\r')
 OUTPUT_DIR="$brand - $device_model"
 mkdir -p "$OUTPUT_DIR/apk"
 
+# Lade die JSON-Datei herunter
+curl -sL "https://raw.githubusercontent.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation/main/resources/assets/uad_lists.json" -o uad_lists.json
+
+# Extrahiere alle Paket-IDs aus der JSON-Datei in ein Array
+uad_ids=$(jq -r 'keys[]' uad_lists.json)
+
 #Geräteinformationen exportieren
 adb shell getprop | grep -E '^\[ro\.product|\[ro\.build' > "$OUTPUT_DIR/device_info.txt"
 echo "Geräteinformationen wurden in $OUTPUT_DIR/device_info.txt gespeichert."
@@ -29,6 +35,13 @@ do
   echo "ID: $id"
   echo "Path: $path"
 
+  if ! echo "$uad_ids" | grep -q "^$id$"; then
+      echo "$id" >> "../unlisted_by_uad-ng_automatic.txt"
+      echo "Nicht gelistet: $id"
+  else
+      echo "Gelistet: $id"
+  fi
+
   # Jede Zeile bearbeiten
   adb pull $path "$id".apk
   echo ""
@@ -38,30 +51,9 @@ zip -r "$OUTPUT_DIR - apk.zip" "$OUTPUT_DIR/apk"
 cd ..
 cd ..
 
-#while IFS= read -r package
-#do
-#  # Jede Zeile bearbeiten
-#  adb pull $package 
-#done < "../packages.txt"
-#zip -r "$OUTPUT_DIR - apk.zip" "$OUTPUT_DIR/apk" 
-#cd ..
-#cd ..
-
-##test ob man id und path trennen kann
-#adb shell pm list packages -f | sed 's/package://g' | awk -F'=' '{ 
-#    id = $NF; 
-#    sub("=" id "$", ""); 
-#    print "Path: " $0 "\nID: " id 
-#    adb pull $0 id.apk
-#}'
-
-##ausprobiert ob es als id.apk herunterladbar ist
-#adb shell pm list packages -f | sed 's/package://g' | while read line; do
-#    id=$(echo "$line" | awk -F'=' '{print $NF}')
-#    path=$(echo "$line" | sed "s/=$id$//")
-#    echo "Path: $path"
-#    echo "ID: $id"
-#    # APK herunterladen und mit dem Paketnamen speichern
-#    adb pull "$path" "${id}.apk"
-#done
-
+#if ! echo "$uad_ids" | grep -q "^vendor.qti.hardware.cacert.server$"; then
+#    echo "$id" >> unlisted.txt
+#    echo "Nicht gelistet: vendor.qti.hardware.cacert.server"
+#else
+#    echo "Gelistet: vendor.qti.hardware.cacert.server"
+#fi
