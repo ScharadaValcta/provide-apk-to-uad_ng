@@ -12,7 +12,7 @@ mkdir -p "$OUTPUT_DIR/apk"
 curl -sL "https://raw.githubusercontent.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation/main/resources/assets/uad_lists.json" -o uad_lists.json
 
 # Extrahiere alle Paket-IDs aus der JSON-Datei in ein Array
-uad_ids=$(jq -r 'keys[]' uad_lists.json)
+uad_ids=$(jq -r 'keys[]' ./uad_lists.json)
 
 #Geräteinformationen exportieren
 adb shell getprop | grep -E '^\[ro\.product|\[ro\.build' > "$OUTPUT_DIR/device_info.txt"
@@ -20,11 +20,7 @@ echo "Geräteinformationen wurden in $OUTPUT_DIR/device_info.txt gespeichert."
 
 # Alle installierten Pakete auflisten
 adb shell pm list packages -f | grep -v "~~" | cut -d':' -f2 > "$OUTPUT_DIR/full_packages.txt"
-adb shell pm list packages -f | grep -v "~~" | cut -d':' -f2 | cut -d'=' -f1 > "$OUTPUT_DIR/packages.txt"
-adb shell pm list packages -f | grep -v "~~" | cut -d':' -f2 | cut -d'=' -f2 > "$OUTPUT_DIR/unlisted1.txt"
-adb shell pm list packages -f | grep -v "~~" | cut -d':' -f2 | cut -d'=' -f3 > "$OUTPUT_DIR/unlisted2.txt"
-cat "$OUTPUT_DIR/unlisted1.txt" "$OUTPUT_DIR/unlisted2.txt" | sort -u > "$OUTPUT_DIR/unlisted_by_uad-ng.txt"
-rm "$OUTPUT_DIR/unlisted1.txt" "$OUTPUT_DIR/unlisted2.txt"
+adb shell pm list packages -f | grep -v base.apk | cut -d':' -f2 > "$OUTPUT_DIR/system_packages.txt"
 
 cd "$OUTPUT_DIR/apk"
 # Über die Datei iterieren
@@ -40,20 +36,36 @@ do
       echo "Nicht gelistet: $id"
   else
       echo "Gelistet: $id"
+      # Überprüfe, ob die Beschreibung der ID den Text "share the apk" enthält
+      if jq -e --arg id "$id" '.[$id].description | test("share the apk")' ../../uad_lists.json > /dev/null; then
+          echo "$id" >> "../share_request.txt"
+          echo "$id wurde in share_request.txt hinzugefügt."
+      fi
   fi
 
   # Jede Zeile bearbeiten
   adb pull $path "$id".apk
   echo ""
-done < "../full_packages.txt"
+done < "../system_packages.txt"
 
-zip -r "$OUTPUT_DIR - apk.zip" "$OUTPUT_DIR/apk" 
 cd ..
 cd ..
 
-#if ! echo "$uad_ids" | grep -q "^vendor.qti.hardware.cacert.server$"; then
-#    echo "$id" >> unlisted.txt
-#    echo "Nicht gelistet: vendor.qti.hardware.cacert.server"
-#else
-#    echo "Gelistet: vendor.qti.hardware.cacert.server"
-#fi
+zip -r "$OUTPUT_DIR - apk.zip" . -i "$OUTPUT_DIR/apk/*" 
+
+echo ""
+echo "Packages found are which are unlisted or have a share request."
+cat "$OUTPUT_DIR/share_request.txt" "$OUTPUT_DIR/unlisted_by_uad-ng_automatic.txt"
+echo ""
+
+while IFS= read -r line
+do
+  zip -r "$OUTPUT_DIR - unlisted or share request.zip" . -i "$OUTPUT_DIR/apk/$line.apk" 
+
+done < "$OUTPUT_DIR/share_request.txt"
+
+while IFS= read -r line
+do
+  zip -r "$OUTPUT_DIR - unlisted or share request.zip" . -i "$OUTPUT_DIR/apk/$line.apk" 
+
+done < "$OUTPUT_DIR/unlisted_by_uad-ng_automatic.txt"
