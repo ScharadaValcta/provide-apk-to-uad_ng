@@ -1,3 +1,0 @@
-com.android.sos
-com.mediatek.security
-mobile.miki
