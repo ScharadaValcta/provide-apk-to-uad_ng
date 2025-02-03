@@ -1,0 +1,11 @@
+com.sec.android.app.easylauncher
+com.sec.spen.flashannotate
+com.samsung.android.tzdata.update
+com.samsung.android.app.scrollcapture
+com.sec.svoice.lang.de_DE
+com.sec.svoice.lang.en_US
+com.sec.svoice.lang.es_ES
+com.sec.svoice.lang.fr_FR
+com.sec.svoice.lang.it_IT
+com.sec.svoice.lang.ru_RU
+com.samsung.android.app.appupdater
