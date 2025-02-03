@@ -1,5 +1,11 @@
 #!/bin/bash
 
+echo "Starting if a device is connected"
+while ! adb get-state 1>/dev/null 2>&1; do
+  adb reconnect
+  sleep 2  # Warten für 2 Sekunden, bevor erneut geprüft wird
+done
+
 # Gerätemodell und Hersteller ermitteln
 brand=$(adb shell getprop ro.product.brand | tr -d '\r')
 device_model=$(adb shell getprop ro.product.model | tr -d '\r')
@@ -42,9 +48,28 @@ do
           echo "$id wurde in share_request.txt hinzugefügt."
       fi
   fi
+  if [ -e "$id".apk ]; then
+    continue  # Springt zur nächsten Zeile
+  fi
+  while ! adb get-state 1>/dev/null 2>&1; do
+    adb reconnect
+    sleep 2  # Warten für 2 Sekunden, bevor erneut geprüft wird
+  done
 
-  # Jede Zeile bearbeiten
   adb pull $path "$id".apk
+
+  if [ -e "$id".apk ]; then
+    echo "$path $id.apk" >> "missing.txt"
+  fi
+
+#  while [ ! -e "$id".apk ]; do
+#  # Jede Zeile bearbeiten
+#    adb pull $path "$id".apk
+#    while ! adb get-state 1>/dev/null 2>&1; do
+#      adb reconnect
+#      sleep 2  # Warten für 2 Sekunden, bevor erneut geprüft wird
+#    done
+#  done
   echo ""
 done < "../system_packages.txt"
 
