@@ -1,0 +1,3 @@
+com.mediatek
+com.mediatek.callrecorder
+com.mediatek.mdmconfig
