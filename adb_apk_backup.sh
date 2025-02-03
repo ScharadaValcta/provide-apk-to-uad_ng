@@ -1,10 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euf -o pipefail
 
 echo "Starting if a device is connected"
-while ! adb get-state 1>/dev/null 2>&1; do
-  adb reconnect
-  sleep 2  # Warten für 2 Sekunden, bevor erneut geprüft wird
-done
+adb wait-for-device
 
 # Gerätemodell und Hersteller ermitteln
 brand=$(adb shell getprop ro.product.brand | tr -d '\r')
@@ -25,17 +23,18 @@ adb shell getprop | grep -E '^\[ro\.product|\[ro\.build' > "$OUTPUT_DIR/device_i
 echo "Geräteinformationen wurden in $OUTPUT_DIR/device_info.txt gespeichert."
 
 # Alle installierten Pakete auflisten
-adb shell pm list packages -f | grep -v "~~" | cut -d':' -f2 > "$OUTPUT_DIR/full_packages.txt"
-adb shell pm list packages -f | grep -v base.apk | cut -d':' -f2 > "$OUTPUT_DIR/system_packages.txt"
+readonly all_packs
+all_packs="$(adb shell pm list packages -f)"
+echo "$all_packs" | grep -v "~~" | cut -d':' -f2 > "$OUTPUT_DIR/full_packages.txt"
+echo "$all_packs" | grep -v base.apk | cut -d':' -f2 > "$OUTPUT_DIR/system_packages.txt"
 
 cd "$OUTPUT_DIR/apk"
 # Über die Datei iterieren
 while IFS= read -r line
 do
   id=$(echo "$line" | awk -F'=' '{print $NF}')
-  path=$(echo "$line" | sed "s/=$id$//")
-  echo "ID: $id"
-  echo "Path: $path"
+  path="${line/=$id$/}"
+  printf '%s\n%s\n' "ID: $id" "Path: $path"
 
   if ! echo "$uad_ids" | grep -q "^$id$"; then
       echo "$id" >> "../unlisted_by_uad-ng_automatic.txt"
@@ -51,12 +50,9 @@ do
   if [ -e "$id".apk ]; then
     continue  # Springt zur nächsten Zeile
   fi
-  while ! adb get-state 1>/dev/null 2>&1; do
-    adb reconnect
-    sleep 2  # Warten für 2 Sekunden, bevor erneut geprüft wird
-  done
+  adb wait-for-device
 
-  adb pull $path "$id".apk
+  adb pull "$path" "$id".apk
 
   if [ -e "$id".apk ]; then
     echo "$path $id.apk" >> "missing.txt"
@@ -73,15 +69,13 @@ do
   echo ""
 done < "../system_packages.txt"
 
-cd ..
-cd ..
+cd ../../
 
 zip -r "$OUTPUT_DIR - apk.zip" . -i "$OUTPUT_DIR/apk/*" 
 
-echo ""
-echo "Packages found are which are unlisted or have a share request."
+printf '\n%s\n' "Packages found are which are unlisted or have a share request."
 cat "$OUTPUT_DIR/share_request.txt" "$OUTPUT_DIR/unlisted_by_uad-ng_automatic.txt"
-echo ""
+echo
 
 while IFS= read -r line
 do
@@ -94,3 +88,4 @@ do
   zip -r "$OUTPUT_DIR - unlisted or share request.zip" . -i "$OUTPUT_DIR/apk/$line.apk" 
 
 done < "$OUTPUT_DIR/unlisted_by_uad-ng_automatic.txt"
+
