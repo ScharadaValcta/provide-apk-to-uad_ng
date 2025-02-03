@@ -21,12 +21,47 @@ cat "$OUTPUT_DIR/unlisted1.txt" "$OUTPUT_DIR/unlisted2.txt" | sort -u > "$OUTPUT
 rm "$OUTPUT_DIR/unlisted1.txt" "$OUTPUT_DIR/unlisted2.txt"
 
 cd "$OUTPUT_DIR/apk"
-zip "$OUTPUT_DIR - apk.zip" "$OUTPUT_DIR/apk" 
 # Über die Datei iterieren
-while IFS= read -r package
+while IFS= read -r line
 do
+  id=$(echo "$line" | awk -F'=' '{print $NF}')
+  path=$(echo "$line" | sed "s/=$id$//")
+  echo "ID: $id"
+  echo "Path: $path"
+
   # Jede Zeile bearbeiten
-  adb pull $package 
-done < "../packages.txt"
+  adb pull $path "$id".apk
+  echo ""
+done < "../full_packages.txt"
+
+zip -r "$OUTPUT_DIR - apk.zip" "$OUTPUT_DIR/apk" 
 cd ..
 cd ..
+
+#while IFS= read -r package
+#do
+#  # Jede Zeile bearbeiten
+#  adb pull $package 
+#done < "../packages.txt"
+#zip -r "$OUTPUT_DIR - apk.zip" "$OUTPUT_DIR/apk" 
+#cd ..
+#cd ..
+
+##test ob man id und path trennen kann
+#adb shell pm list packages -f | sed 's/package://g' | awk -F'=' '{ 
+#    id = $NF; 
+#    sub("=" id "$", ""); 
+#    print "Path: " $0 "\nID: " id 
+#    adb pull $0 id.apk
+#}'
+
+##ausprobiert ob es als id.apk herunterladbar ist
+#adb shell pm list packages -f | sed 's/package://g' | while read line; do
+#    id=$(echo "$line" | awk -F'=' '{print $NF}')
+#    path=$(echo "$line" | sed "s/=$id$//")
+#    echo "Path: $path"
+#    echo "ID: $id"
+#    # APK herunterladen und mit dem Paketnamen speichern
+#    adb pull "$path" "${id}.apk"
+#done
+
