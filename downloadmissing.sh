@@ -26,7 +26,6 @@ do
 done < "missing.txt"
 
 echo "Missing apks before: $(cat missing.txt | wc -l)"
-echo "Missing apks after: $(cat missing_new.txt | wc -l)"
 
 rm missing.txt
 if [ -f "missing_new.txt" ]; then
