@@ -36,6 +36,8 @@ rm missing.txt
 if [ -e "missing_new.txt" ]; then
   echo "Missing apks after: $(cat missing_new.txt | wc -l)"
   echo "There are still APK-Files missing. Please run again"
+  # Possible Permission denied -> device 
+  # Possible download error -> rerun fixes that 
   mv missing_new.txt missing.txt
 else
   echo "All APK-File are there please run adb_apk_backup.sh again."
