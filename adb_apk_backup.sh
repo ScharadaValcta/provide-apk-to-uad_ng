@@ -15,9 +15,12 @@ OUTPUT_DIR="$brand - $device_model"
 mkdir -p "$OUTPUT_DIR/apk"
 
 # Lade die JSON-Datei herunter
+echo "Download of uad_list.json"
 curl -sL "https://raw.githubusercontent.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation/main/resources/assets/uad_lists.json" -o uad_lists.json
+# TODO maybe --connect-timeout 10 and checking i uad_list.json is downloaded
 
 # Extrahiere alle Paket-IDs aus der JSON-Datei in ein Array
+echo "Loding uad_ids of uad_list.json"
 uad_ids=$(jq -r 'keys[]' ./uad_lists.json)
 
 #Geräteinformationen exportieren
@@ -25,8 +28,23 @@ adb shell getprop | grep -E '^\[ro\.product|\[ro\.build' > "$OUTPUT_DIR/device_i
 echo "Geräteinformationen wurden in $OUTPUT_DIR/device_info.txt gespeichert."
 
 # Alle installierten Pakete auflisten
-adb shell pm list packages -f | grep -v "~~" | cut -d':' -f2 > "$OUTPUT_DIR/full_packages.txt"
-adb shell pm list packages -f | grep -v base.apk | cut -d':' -f2 | tr -d '\r'  > "$OUTPUT_DIR/system_packages.txt"
+#adb shell pm list packages -f | grep -v "~~" | cut -d':' -f2 > "$OUTPUT_DIR/full_packages.txt"
+#adb shell pm list packages -f | grep -v base.apk | cut -d':' -f2 | tr -d '\r'  > "$OUTPUT_DIR/system_packages.txt"
+all_packs="$(adb shell pm list packages -f)"
+readonly all_packs
+echo "$all_packs" | grep -v "~~" | cut -d':' -f2 > "$OUTPUT_DIR/full_packages.txt"
+echo "$all_packs" | grep -v base.apk | cut -d':' -f2 | tr -d '\r' > "$OUTPUT_DIR/system_packages.txt"
+
+#removing from previous pulls
+if [ -f "$OUTPUT_DIR/unlisted_by_uad-ng_automatic.txt" ]; then
+  rm "$OUTPUT_DIR/unlisted_by_uad-ng_automatic.txt"
+fi
+if [ -f "$OUTPUT_DIR/share_request.txt" ]; then
+  rm "$OUTPUT_DIR/share_request.txt"
+fi
+if [ -f "$OUTPUT_DIR/apk/missing.txt" ]; then
+  rm "$OUTPUT_DIR/apk/missing.txt"
+fi
 
 cd "$OUTPUT_DIR/apk"
 # Über die Datei iterieren
@@ -49,6 +67,8 @@ do
       fi
   fi
   if [ -e "$id".apk ]; then
+    echo "$id.apk already exists"
+    echo ""
     continue  # Springt zur nächsten Zeile
   fi
   while ! adb get-state 1>/dev/null 2>&1; do
@@ -56,41 +76,47 @@ do
     sleep 2  # Warten für 2 Sekunden, bevor erneut geprüft wird
   done
 
-  adb pull $path "$id".apk
+  adb pull "$path" "$id".apk
 
   if [ -e "$id".apk ]; then
     echo "$path $id.apk" >> "missing.txt"
   fi
-
-#  while [ ! -e "$id".apk ]; do
-#  # Jede Zeile bearbeiten
-#    adb pull $path "$id".apk
-#    while ! adb get-state 1>/dev/null 2>&1; do
-#      adb reconnect
-#      sleep 2  # Warten für 2 Sekunden, bevor erneut geprüft wird
-#    done
-#  done
   echo ""
 done < "../system_packages.txt"
 
-cd ..
-cd ..
+cd ../../
 
 zip -r "$OUTPUT_DIR - apk.zip" . -i "$OUTPUT_DIR/apk/*" 
-
-echo ""
-echo "Packages found are which are unlisted or have a share request."
-cat "$OUTPUT_DIR/share_request.txt" "$OUTPUT_DIR/unlisted_by_uad-ng_automatic.txt"
 echo ""
 
-while IFS= read -r line
-do
-  zip -r "$OUTPUT_DIR - unlisted or share request.zip" . -i "$OUTPUT_DIR/apk/$line.apk" 
+if [ -f "$OUTPUT_DIR/unlisted_by_uad-ng_automatic.txt" ]; then
+  echo "Packages found which are unlisted."
+  cat "$OUTPUT_DIR/unlisted_by_uad-ng_automatic.txt"
+  echo ""
+fi
+if [ -f "$OUTPUT_DIR/share_request.txt" ]; then
+  echo "Packages found which have a share request."
+  cat "$OUTPUT_DIR/share_request.txt"
+  echo ""
+fi
+if [ -f "$OUTPUT_DIR/apk/missing.txt" ]; then
+  echo "Packages which cant be downloaded and are declared missing."
+  cat "$OUTPUT_DIR/apk/missing.txt"
+  echo ""
+fi
 
-done < "$OUTPUT_DIR/share_request.txt"
+if [ -f "$OUTPUT_DIR/share_request.txt" ]; then
+  while IFS= read -r line
+  do
+    zip -r "$OUTPUT_DIR - unlisted or share request.zip" . -i "$OUTPUT_DIR/apk/$line.apk" 
+  
+  done < "$OUTPUT_DIR/share_request.txt"
+fi
 
-while IFS= read -r line
-do
-  zip -r "$OUTPUT_DIR - unlisted or share request.zip" . -i "$OUTPUT_DIR/apk/$line.apk" 
-
-done < "$OUTPUT_DIR/unlisted_by_uad-ng_automatic.txt"
+if [ -f "$OUTPUT_DIR/unlisted_by_uad-ng_automatic.txt" ]; then
+  while IFS= read -r line
+  do
+    zip -r "$OUTPUT_DIR - unlisted or share request.zip" . -i "$OUTPUT_DIR/apk/$line.apk" 
+  
+  done < "$OUTPUT_DIR/unlisted_by_uad-ng_automatic.txt"
+fi
