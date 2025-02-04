@@ -1,0 +1,5 @@
+/vendor/app/Perfdump/Perfdump.apk com.qualcomm.qti.perfdump.apk
+/vendor/app/colorservice/colorservice.apk com.qti.service.colorservice.apk
+/vendor/overlay/SysuiDarkTheme/SysuiDarkThemeOverlay.apk com.android.systemui.theme.dark.apk
+/vendor/app/Qmmi/Qmmi.apk com.qualcomm.qti.qmmi.apk
+/vendor/app/TimeService/TimeService.apk com.qualcomm.timeservice.apk
