@@ -28,8 +28,6 @@ adb shell getprop | grep -E '^\[ro\.product|\[ro\.build' > "$OUTPUT_DIR/device_i
 echo "Geräteinformationen wurden in $OUTPUT_DIR/device_info.txt gespeichert."
 
 # Alle installierten Pakete auflisten
-#adb shell pm list packages -f | grep -v "~~" | cut -d':' -f2 > "$OUTPUT_DIR/full_packages.txt"
-#adb shell pm list packages -f | grep -v base.apk | cut -d':' -f2 | tr -d '\r'  > "$OUTPUT_DIR/system_packages.txt"
 all_packs="$(adb shell pm list packages -f)"
 readonly all_packs
 echo "$all_packs" | grep -v "~~" | cut -d':' -f2 > "$OUTPUT_DIR/full_packages.txt"
