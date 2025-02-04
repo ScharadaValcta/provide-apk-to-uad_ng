@@ -26,13 +26,13 @@ echo "Geräteinformationen wurden in $OUTPUT_DIR/device_info.txt gespeichert."
 
 # Alle installierten Pakete auflisten
 adb shell pm list packages -f | grep -v "~~" | cut -d':' -f2 > "$OUTPUT_DIR/full_packages.txt"
-adb shell pm list packages -f | grep -v base.apk | cut -d':' -f2 > "$OUTPUT_DIR/system_packages.txt"
+adb shell pm list packages -f | grep -v base.apk | cut -d':' -f2 | tr -d '\r'  > "$OUTPUT_DIR/system_packages.txt"
 
 cd "$OUTPUT_DIR/apk"
 # Über die Datei iterieren
 while IFS= read -r line
 do
-  id=$(echo "$line" | awk -F'=' '{print $NF}')
+  id=$(echo "$line" | awk -F'=' '{print $NF}' | tr -d '\r')
   path=$(echo "$line" | sed "s/=$id$//")
   echo "ID: $id"
   echo "Path: $path"
