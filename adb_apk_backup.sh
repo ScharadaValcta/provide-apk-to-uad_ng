@@ -67,7 +67,7 @@ do
           echo "$id wurde in share_request.txt hinzugefügt."
       fi
   fi
-  if [ -e "$id".apk ]; then
+  if [ -e "$id.apk" ]; then
     echo "$id.apk already exists"
     echo ""
     continue  # Springt zur nächsten Zeile
@@ -83,8 +83,10 @@ do
   adb pull "$path" "$id".apk
   sleep 1
 
-  if [ -e "$id".apk ]; then
-    echo "$id.apk is missing."
+  if [ -e "$id.apk" ]; then
+    echo "$id.apk download successfull"
+  else
+    echo "$id.apk is still missing."
     echo "$path $id.apk" >> "missing.txt"
   fi
   echo ""

@@ -13,22 +13,27 @@ do
   echo "$id"
   #id2=$(echo "$line" | cut -d' ' -f2)
   #echo "$id2"
-  if [ -f "$id" ]; then
+  if [ -e "$id" ]; then
     echo "$id is not missing."
     continue
+  else
+    echo "$id is missing."
   fi
 
   adb pull $line
 
   if [ -e "$id" ]; then
+    echo "$id is downloaded."
+  else
     echo "$line" >> "missing_new.txt"
   fi
+  echo ""
 done < "missing.txt"
 
 echo "Missing apks before: $(cat missing.txt | wc -l)"
 
 rm missing.txt
-if [ -f "missing_new.txt" ]; then
+if [ -e "missing_new.txt" ]; then
   echo "Missing apks after: $(cat missing_new.txt | wc -l)"
   echo "There are still APK-Files missing. Please run again"
   mv missing_new.txt missing.txt
