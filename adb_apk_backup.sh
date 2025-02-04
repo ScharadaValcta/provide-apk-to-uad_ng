@@ -1,8 +1,11 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 echo "Starting if a device is connected"
 while ! adb get-state 1>/dev/null 2>&1; do
   adb reconnect
+  if ! adb get-state 1>/dev/null 2>&1; then
+    (adb kill-server && adb start-server)
+  fi
   sleep 2  # Warten für 2 Sekunden, bevor erneut geprüft wird
 done
 
@@ -71,12 +74,17 @@ do
   fi
   while ! adb get-state 1>/dev/null 2>&1; do
     adb reconnect
+    if ! adb get-state 1>/dev/null 2>&1; then
+      (adb kill-server && adb start-server)
+    fi
     sleep 2  # Warten für 2 Sekunden, bevor erneut geprüft wird
   done
 
   adb pull "$path" "$id".apk
+  sleep 1
 
   if [ -e "$id".apk ]; then
+    echo "$id.apk is missing."
     echo "$path $id.apk" >> "missing.txt"
   fi
   echo ""
