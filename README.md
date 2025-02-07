@@ -54,6 +54,10 @@ Brand - Model/
 - **ADB does not recognize the device**: Ensure the device is in developer mode and USB debugging is enabled. Confirm the debugging prompt on the device.
 - **Some APKs dont get downloaded**: These where the Error comes are not of interest in uad_ng.
 
+## Aditional Links
+- [How to Set Up and Use ADB over Wi-Fi (Windows & Mac)](https://technastic.com/set-up-adb-over-wifi-android/)
+
+
 ## License
 This script is licensed under the [MIT License](https://opensource.org/licenses/MIT).
 
